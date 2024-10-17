@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_1"
+             targetNamespace="http://example.com/bpmn"
+             exporter="ChatGPT BPMN Generator"
+             exporterVersion="1.0">
+
+  <!-- Process Definition -->
+  <process id="FoodOrderingProcess" name="Food Ordering and Delivery Process" isExecutable="true">
+
+    <!-- Lanes -->
+    <laneSet id="LaneSet_1">
+      <lane id="Lane_Customer" name="Customer Lane">
+        <flowNodeRef>StartEvent_CustomerOrder</flowNodeRef>
+        <flowNodeRef>Activity_EnterOrderDetails</flowNodeRef>
+        <flowNodeRef>Gateway_OrderTypeSelection</flowNodeRef>
+        <flowNodeRef>Activity_ProcessPayment</flowNodeRef>
+        <flowNodeRef>Gateway_PaymentSuccessful</flowNodeRef>
+        <flowNodeRef>EndEvent_PaymentFailed</flowNodeRef>
+      </lane>
+      <lane id="Lane_Restaurant" name="Restaurant Lane">
+        <flowNodeRef>StartEvent_OrderReceived</flowNodeRef>
+        <flowNodeRef>Activity_PrepareFood</flowNodeRef>
+        <flowNodeRef>Gateway_RestaurantOrderType</flowNodeRef>
+        <flowNodeRef>Activity_PackTakeaway</flowNodeRef>
+        <flowNodeRef>EndEvent_TakeawayComplete</flowNodeRef>
+        <flowNodeRef>Activity_ServeInHouse</flowNodeRef>
+        <flowNodeRef>EndEvent_InHouseComplete</flowNodeRef>
+        <flowNodeRef>Activity_PackDelivery</flowNodeRef>
+      </lane>
+      <lane id="Lane_DeliveryService" name="Delivery Service Lane">
+        <flowNodeRef>StartEvent_DeliveryReceived</flowNodeRef>
+        <flowNodeRef>Activity_DeliverOrder</flowNodeRef>
+        <flowNodeRef>Gateway_DeliverySuccessful</flowNodeRef>
+        <flowNodeRef>EndEvent_DeliveryComplete</flowNodeRef>
+        <flowNodeRef>Activity_NotifyDeliveryIssue</flowNodeRef>
+        <flowNodeRef>EndEvent_DeliveryFailed</flowNodeRef>
+      </lane>
+    </laneSet>
+
+    <!-- Customer Lane Elements -->
+    <startEvent id="StartEvent_CustomerOrder" name="Customer places an order">
+      <outgoing>Flow_1</outgoing>
+    </startEvent>
+
+    <task id="Activity_EnterOrderDetails" name="Enter order details">
+      <incoming>Flow_1</incoming>
+      <outgoing>Flow_2</outgoing>
+    </task>
+
+    <exclusiveGateway id="Gateway_OrderTypeSelection" name="Order type?">
+      <incoming>Flow_2</incoming>
+      <outgoing>Flow_3</outgoing>
+    </exclusiveGateway>
+
+    <task id="Activity_ProcessPayment" name="Process payment">
+      <incoming>Flow_3</incoming>
+      <outgoing>Flow_4</outgoing>
+    </task>
+
+    <exclusiveGateway id="Gateway_PaymentSuccessful" name="Is payment successful?">
+      <incoming>Flow_4</incoming>
+      <outgoing>Flow_5_Yes</outgoing>
+      <outgoing>Flow_5_No</outgoing>
+    </exclusiveGateway>
+
+    <endEvent id="EndEvent_PaymentFailed" name="Payment failed">
+      <incoming>Flow_5_No</incoming>
+    </endEvent>
+
+    <!-- Restaurant Lane Elements -->
+    <startEvent id="StartEvent_OrderReceived" name="Order received">
+      <incoming>MessageFlow_OrderDetailsToRestaurant</incoming>
+      <outgoing>Flow_6</outgoing>
+    </startEvent>
+
+    <task id="Activity_PrepareFood" name="Prepare food">
+      <incoming>Flow_6</incoming>
+      <outgoing>Flow_7</outgoing>
+    </task>
+
+    <exclusiveGateway id="Gateway_RestaurantOrderType" name="Order type?">
+      <incoming>Flow_7</incoming>
+      <outgoing>Flow_8_Takeaway</outgoing>
+      <outgoing>Flow_8_InHouse</outgoing>
+      <outgoing>Flow_8_Delivery</outgoing>
+    </exclusiveGateway>
+
+    <!-- Takeaway Path -->
+    <task id="Activity_PackTakeaway" name="Pack order for takeaway">
+      <incoming>Flow_8_Takeaway</incoming>
+      <outgoing>Flow_9_Takeaway</outgoing>
+    </task>
+
+    <endEvent id="EndEvent_TakeawayComplete" name="Customer receives takeaway order">
+      <incoming>Flow_9_Takeaway</incoming>
+    </endEvent>
+
+    <!-- In-House Path -->
+    <task id="Activity_ServeInHouse" name="Serve food to customer in-house">
+      <incoming>Flow_8_InHouse</incoming>
+      <outgoing>Flow_9_InHouse</outgoing>
+    </task>
+
+    <endEvent id="EndEvent_InHouseComplete" name="Order served to customer in-house">
+      <incoming>Flow_9_InHouse</incoming>
+    </endEvent>
+
+    <!-- Delivery Path -->
+    <task id="Activity_PackDelivery" name="Pack order for delivery">
+      <incoming>Flow_8_Delivery</incoming>
+      <outgoing>MessageFlow_OrderToDeliveryService</outgoing>
+    </task>
+
+    <!-- Delivery Service Lane Elements -->
+    <startEvent id="StartEvent_DeliveryReceived" name="Order received for delivery">
+      <incoming>MessageFlow_OrderToDeliveryService</incoming>
+      <outgoing>Flow_10</outgoing>
+    </startEvent>
+
+    <task id="Activity_DeliverOrder" name="Deliver order">
+      <incoming>Flow_10</incoming>
+      <outgoing>Flow_11</outgoing>
+    </task>
+
+    <exclusiveGateway id="Gateway_DeliverySuccessful" name="Is delivery successful?">
+      <incoming>Flow_11</incoming>
+      <outgoing>Flow_12_Yes</outgoing>
+      <outgoing>Flow_12_No</outgoing>
+    </exclusiveGateway>
+
+    <endEvent id="EndEvent_DeliveryComplete" name="Order delivered to customer">
+      <incoming>Flow_12_Yes</incoming>
+    </endEvent>
+
+    <task id="Activity_NotifyDeliveryIssue" name="Notify customer of delivery issue">
+      <incoming>Flow_12_No</incoming>
+      <outgoing>Flow_13</outgoing>
+    </task>
+
+    <endEvent id="EndEvent_DeliveryFailed" name="Delivery failed">
+      <incoming>Flow_13</incoming>
+    </endEvent>
+
+    <!-- Sequence Flows -->
+    <sequenceFlow id="Flow_1" sourceRef="StartEvent_CustomerOrder" targetRef="Activity_EnterOrderDetails"/>
+    <sequenceFlow id="Flow_2" sourceRef="Activity_EnterOrderDetails" targetRef="Gateway_OrderTypeSelection"/>
+    <sequenceFlow id="Flow_3" sourceRef="Gateway_OrderTypeSelection" targetRef="Activity_ProcessPayment"/>
+    <sequenceFlow id="Flow_4" sourceRef="Activity_ProcessPayment" targetRef="Gateway_PaymentSuccessful"/>
+    <sequenceFlow id="Flow_5_Yes" sourceRef="Gateway_PaymentSuccessful" targetRef="StartEvent_OrderReceived">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Payment Successful]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_5_No" sourceRef="Gateway_PaymentSuccessful" targetRef="EndEvent_PaymentFailed">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Payment Failed]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_6" sourceRef="StartEvent_OrderReceived" targetRef="Activity_PrepareFood"/>
+    <sequenceFlow id="Flow_7" sourceRef="Activity_PrepareFood" targetRef="Gateway_RestaurantOrderType"/>
+    <sequenceFlow id="Flow_8_Takeaway" sourceRef="Gateway_RestaurantOrderType" targetRef="Activity_PackTakeaway">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Takeaway]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_8_InHouse" sourceRef="Gateway_RestaurantOrderType" targetRef="Activity_ServeInHouse">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[InHouse]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_8_Delivery" sourceRef="Gateway_RestaurantOrderType" targetRef="Activity_PackDelivery">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Delivery]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_9_Takeaway" sourceRef="Activity_PackTakeaway" targetRef="EndEvent_TakeawayComplete"/>
+    <sequenceFlow id="Flow_9_InHouse" sourceRef="Activity_ServeInHouse" targetRef="EndEvent_InHouseComplete"/>
+    <sequenceFlow id="Flow_10" sourceRef="StartEvent_DeliveryReceived" targetRef="Activity_DeliverOrder"/>
+    <sequenceFlow id="Flow_11" sourceRef="Activity_DeliverOrder" targetRef="Gateway_DeliverySuccessful"/>
+    <sequenceFlow id="Flow_12_Yes" sourceRef="Gateway_DeliverySuccessful" targetRef="EndEvent_DeliveryComplete">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Delivery Successful]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_12_No" sourceRef="Gateway_DeliverySuccessful" targetRef="Activity_NotifyDeliveryIssue">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[Delivery Failed]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="Flow_13" sourceRef="Activity_NotifyDeliveryIssue" targetRef="EndEvent_DeliveryFailed"/>
+
+    <!-- Message Flows -->
+    <messageFlow id="MessageFlow_OrderDetailsToRestaurant" name="Send order details to restaurant" sourceRef="Gateway_PaymentSuccessful" targetRef="StartEvent_OrderReceived"/>
+    <messageFlow id="MessageFlow_OrderToDeliveryService" name="Hand over order for delivery" sourceRef="Activity_PackDelivery" targetRef="StartEvent_DeliveryReceived"/>
+
+  </process>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_FoodOrderingProcess">
+    <bpmndi:BPMNPlane id="BPMNPlane_FoodOrderingProcess" bpmnElement="FoodOrderingProcess">
+
+      <!-- Customer Lane Shape -->
+      <bpmndi:BPMNShape id="Shape_Lane_Customer" bpmnElement="Lane_Customer" isHorizontal="true">
+        <dc:Bounds x="0" y="0" width="1200" height="150"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Restaurant Lane Shape -->
+      <bpmndi:BPMNShape id="Shape_Lane_Restaurant" bpmnElement="Lane_Restaurant" isHorizontal="true">
+        <dc:Bounds x="0" y="150" width="1200" height="150"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Delivery Service Lane Shape -->
+      <bpmndi:BPMNShape id="Shape_Lane_DeliveryService" bpmnElement="Lane_DeliveryService" isHorizontal="true">
+        <dc:Bounds x="0" y="300" width="1200" height="150"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Customer Lane Nodes -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_CustomerOrder" bpmnElement="StartEvent_CustomerOrder">
+        <dc:Bounds x="100" y="65" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Activity_EnterOrderDetails" bpmnElement="Activity_EnterOrderDetails">
+        <dc:Bounds x="200" y="50" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_OrderTypeSelection" bpmnElement="Gateway_OrderTypeSelection" isMarkerVisible="true">
+        <dc:Bounds x="350" y="65" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Activity_ProcessPayment" bpmnElement="Activity_ProcessPayment">
+        <dc:Bounds x="450" y="50" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_PaymentSuccessful" bpmnElement="Gateway_PaymentSuccessful" isMarkerVisible="true">
+        <dc:Bounds x="600" y="65" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_PaymentFailed" bpmnElement="EndEvent_PaymentFailed">
+        <dc:Bounds x="700" y="65" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Restaurant Lane Nodes -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_OrderReceived" bpmnElement="StartEvent_OrderReceived">
+        <dc:Bounds x="600" y="215" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Activity_PrepareFood" bpmnElement="Activity_PrepareFood">
+        <dc:Bounds x="700" y="200" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_RestaurantOrderType" bpmnElement="Gateway_RestaurantOrderType" isMarkerVisible="true">
+        <dc:Bounds x="850" y="215" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Takeaway Path -->
+      <bpmndi:BPMNShape id="Shape_Activity_PackTakeaway" bpmnElement="Activity_PackTakeaway">
+        <dc:Bounds x="950" y="100" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_TakeawayComplete" bpmnElement="EndEvent_TakeawayComplete">
+        <dc:Bounds x="1100" y="115" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- In-House Path -->
+      <bpmndi:BPMNShape id="Shape_Activity_ServeInHouse" bpmnElement="Activity_ServeInHouse">
+        <dc:Bounds x="950" y="200" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_InHouseComplete" bpmnElement="EndEvent_InHouseComplete">
+        <dc:Bounds x="1100" y="215" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Delivery Path -->
+      <bpmndi:BPMNShape id="Shape_Activity_PackDelivery" bpmnElement="Activity_PackDelivery">
+        <dc:Bounds x="950" y="300" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Delivery Service Lane Nodes -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_DeliveryReceived" bpmnElement="StartEvent_DeliveryReceived">
+        <dc:Bounds x="600" y="365" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Activity_DeliverOrder" bpmnElement="Activity_DeliverOrder">
+        <dc:Bounds x="700" y="350" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_DeliverySuccessful" bpmnElement="Gateway_DeliverySuccessful" isMarkerVisible="true">
+        <dc:Bounds x="850" y="365" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_DeliveryComplete" bpmnElement="EndEvent_DeliveryComplete">
+        <dc:Bounds x="950" y="365" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Activity_NotifyDeliveryIssue" bpmnElement="Activity_NotifyDeliveryIssue">
+        <dc:Bounds x="950" y="450" width="100" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_DeliveryFailed" bpmnElement="EndEvent_DeliveryFailed">
+        <dc:Bounds x="1100" y="465" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Sequence Flow Edges -->
+      <bpmndi:BPMNEdge id="Edge_Flow_1" bpmnElement="Flow_1">
+        <di:waypoint x="136" y="83"/>
+        <di:waypoint x="200" y="83"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_2" bpmnElement="Flow_2">
+        <di:waypoint x="300" y="83"/>
+        <di:waypoint x="350" y="90"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_3" bpmnElement="Flow_3">
+        <di:waypoint x="400" y="90"/>
+        <di:waypoint x="450" y="83"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_4" bpmnElement="Flow_4">
+        <di:waypoint x="550" y="83"/>
+        <di:waypoint x="600" y="90"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_5_Yes" bpmnElement="Flow_5_Yes">
+        <di:waypoint x="625" y="115"/>
+        <di:waypoint x="625" y="233"/>
+        <di:waypoint x="600" y="233"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_5_No" bpmnElement="Flow_5_No">
+        <di:waypoint x="650" y="90"/>
+        <di:waypoint x="700" y="83"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_6" bpmnElement="Flow_6">
+        <di:waypoint x="636" y="233"/>
+        <di:waypoint x="700" y="233"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_7" bpmnElement="Flow_7">
+        <di:waypoint x="800" y="233"/>
+        <di:waypoint x="850" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Takeaway Path Edges -->
+      <bpmndi:BPMNEdge id="Edge_Flow_8_Takeaway" bpmnElement="Flow_8_Takeaway">
+        <di:waypoint x="875" y="215"/>
+        <di:waypoint x="875" y="130"/>
+        <di:waypoint x="950" y="130"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_9_Takeaway" bpmnElement="Flow_9_Takeaway">
+        <di:waypoint x="1050" y="130"/>
+        <di:waypoint x="1100" y="133"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- In-House Path Edges -->
+      <bpmndi:BPMNEdge id="Edge_Flow_8_InHouse" bpmnElement="Flow_8_InHouse">
+        <di:waypoint x="900" y="240"/>
+        <di:waypoint x="950" y="230"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_9_InHouse" bpmnElement="Flow_9_InHouse">
+        <di:waypoint x="1050" y="230"/>
+        <di:waypoint x="1100" y="233"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Delivery Path Edges -->
+      <bpmndi:BPMNEdge id="Edge_Flow_8_Delivery" bpmnElement="Flow_8_Delivery">
+        <di:waypoint x="875" y="265"/>
+        <di:waypoint x="875" y="330"/>
+        <di:waypoint x="950" y="330"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Delivery Service Edges -->
+      <bpmndi:BPMNEdge id="Edge_Flow_10" bpmnElement="Flow_10">
+        <di:waypoint x="636" y="383"/>
+        <di:waypoint x="700" y="383"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_11" bpmnElement="Flow_11">
+        <di:waypoint x="800" y="383"/>
+        <di:waypoint x="850" y="390"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_12_Yes" bpmnElement="Flow_12_Yes">
+        <di:waypoint x="875" y="365"/>
+        <di:waypoint x="950" y="383"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_12_No" bpmnElement="Flow_12_No">
+        <di:waypoint x="875" y="415"/>
+        <di:waypoint x="950" y="480"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_13" bpmnElement="Flow_13">
+        <di:waypoint x="1050" y="480"/>
+        <di:waypoint x="1100" y="483"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Message Flow Edges -->
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_OrderDetailsToRestaurant" bpmnElement="MessageFlow_OrderDetailsToRestaurant">
+        <di:waypoint x="625" y="90"/>
+        <di:waypoint x="625" y="215"/>
+        <di:waypoint x="600" y="215"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_MessageFlow_OrderToDeliveryService" bpmnElement="MessageFlow_OrderToDeliveryService">
+        <di:waypoint x="1050" y="330"/>
+        <di:waypoint x="600" y="383"/>
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

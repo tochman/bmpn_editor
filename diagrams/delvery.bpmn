@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             expressionLanguage="http://www.w3.org/1999/XPath"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <collaboration id="food_ordering_delivery_process">
+    <participant id="customer_pool" name="Customer" processRef="customer_process"/>
+    <participant id="restaurant_pool" name="Restaurant" processRef="restaurant_process"/>
+    <participant id="delivery_service_pool" name="Delivery Service" processRef="delivery_service_process"/>
+  </collaboration>
+
+  <!-- Customer Process -->
+  <process id="customer_process" isExecutable="true">
+    <startEvent id="start_event_customer_order" name="Customer places an order">
+      <outgoing>flow_enter_order_details</outgoing>
+    </startEvent>
+    <task id="enter_order_details" name="Enter order details">
+      <incoming>flow_enter_order_details</incoming>
+      <outgoing>flow_order_type</outgoing>
+    </task>
+    <exclusiveGateway id="order_type_gateway" name="Order type?">
+      <incoming>flow_order_type</incoming>
+      <outgoing>flow_takeaway</outgoing>
+      <outgoing>flow_inhouse</outgoing>
+      <outgoing>flow_delivery</outgoing>
+    </exclusiveGateway>
+    <task id="process_payment" name="Process payment">
+      <incoming>flow_takeaway</incoming>
+      <incoming>flow_inhouse</incoming>
+      <incoming>flow_delivery</incoming>
+      <outgoing>flow_payment_success</outgoing>
+    </task>
+    <exclusiveGateway id="payment_success_gateway" name="Is payment successful?">
+      <incoming>flow_payment_success</incoming>
+      <outgoing>flow_payment_failed</outgoing>
+      <outgoing>flow_payment_successful</outgoing>
+    </exclusiveGateway>
+    <endEvent id="payment_failed" name="Payment failed">
+      <incoming>flow_payment_failed</incoming>
+    </endEvent>
+    <intermediateThrowEvent id="send_order_to_restaurant" name="Send order details to restaurant">
+      <incoming>flow_payment_successful</incoming>
+      <outgoing>flow_order_received</outgoing>
+    </intermediateThrowEvent>
+  </process>
+
+  <!-- Restaurant Process -->
+  <process id="restaurant_process" isExecutable="true">
+    <startEvent id="order_received" name="Order received">
+      <incoming>flow_order_received</incoming>
+      <outgoing>flow_prepare_food</outgoing>
+    </startEvent>
+    <task id="prepare_food" name="Prepare food">
+      <incoming>flow_prepare_food</incoming>
+      <outgoing>flow_restaurant_order_type</outgoing>
+    </task>
+    <exclusiveGateway id="restaurant_order_type_gateway" name="Order type?">
+      <incoming>flow_restaurant_order_type</incoming>
+      <outgoing>flow_pack_takeaway</outgoing>
+      <outgoing>flow_serve_inhouse</outgoing>
+      <outgoing>flow_pack_delivery</outgoing>
+    </exclusiveGateway>
+    <task id="pack_order_takeaway" name="Pack order for takeaway">
+      <incoming>flow_pack_takeaway</incoming>
+      <outgoing>flow_takeaway_end</outgoing>
+    </task>
+    <endEvent id="takeaway_end" name="Customer receives takeaway order">
+      <incoming>flow_takeaway_end</incoming>
+    </endEvent>
+    <task id="serve_food_inhouse" name="Serve food to customer in-house">
+      <incoming>flow_serve_inhouse</incoming>
+      <outgoing>flow_inhouse_end</outgoing>
+    </task>
+    <endEvent id="inhouse_end" name="Order served to customer in-house">
+      <incoming>flow_inhouse_end</incoming>
+    </endEvent>
+    <task id="pack_order_delivery" name="Pack order for delivery">
+      <incoming>flow_pack_delivery</incoming>
+      <outgoing>flow_delivery_handover</outgoing>
+    </task>
+    <intermediateThrowEvent id="handover_to_delivery_service" name="Hand over order for delivery">
+      <incoming>flow_delivery_handover</incoming>
+      <outgoing>flow_delivery_received</outgoing>
+    </intermediateThrowEvent>
+  </process>
+
+  <!-- Delivery Service Process -->
+  <process id="delivery_service_process" isExecutable="true">
+    <startEvent id="delivery_order_received" name="Order received for delivery">
+      <incoming>flow_delivery_received</incoming>
+      <outgoing>flow_deliver_order</outgoing>
+    </startEvent>
+    <task id="deliver_order" name="Deliver order">
+      <incoming>flow_deliver_order</incoming>
+      <outgoing>flow_delivery_success</outgoing>
+    </task>
+    <exclusiveGateway id="delivery_success_gateway" name="Is delivery successful?">
+      <incoming>flow_delivery_success</incoming>
+      <outgoing>flow_delivery_successful</outgoing>
+      <outgoing>flow_delivery_failed</outgoing>
+    </exclusiveGateway>
+    <endEvent id="delivery_successful" name="Order delivered to customer">
+      <incoming>flow_delivery_successful</incoming>
+    </endEvent>
+    <task id="notify_customer_issue" name="Notify customer of delivery issue">
+      <incoming>flow_delivery_failed</incoming>
+      <outgoing>flow_delivery_failed_end</outgoing>
+    </task>
+    <endEvent id="delivery_failed" name="Delivery failed">
+      <incoming>flow_delivery_failed_end</incoming>
+    </endEvent>
+  </process>
+
+  <!-- BPMN Diagram Interchange Elements -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="food_ordering_delivery_process">
+      <!-- Customer Lane -->
+      <bpmndi:BPMNShape id="customer_pool_di" bpmnElement="customer_pool" isHorizontal="true">
+        <dc:Bounds x="100" y="100" width="1200" height="150" />
+      </bpmndi:BPMNShape>
+      <!-- Restaurant Lane -->
+      <bpmndi:BPMNShape id="restaurant_pool_di" bpmnElement="restaurant_pool" isHorizontal="true">
+        <dc:Bounds x="100" y="260" width="1200" height="150" />
+      </bpmndi:BPMNShape>
+      <!-- Delivery Service Lane -->
+      <bpmndi:BPMNShape id="delivery_service_pool_di" bpmnElement="delivery_service_pool" isHorizontal="true">
+        <dc:Bounds x="100" y="420" width="1200" height="150" />
+      </bpmndi:BPMNShape>
+      <!-- Shapes for Customer Process -->
+      <bpmndi:BPMNShape id="start_event_customer_order_di" bpmnElement="start_event_customer_order">
+        <dc:Bounds x="140" y="140" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="enter_order_details_di" bpmnElement="enter_order_details">
+        <dc:Bounds x="220" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="order_type_gateway_di" bpmnElement="order_type_gateway">
+        <dc:Bounds x="360" y="150" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="process_payment_di" bpmnElement="process_payment">
+        <dc:Bounds x="450" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="payment_success_gateway_di" bpmnElement="payment_success_gateway">
+        <dc:Bounds x="580" y="150" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="payment_failed_di" bpmnElement="payment_failed">
+        <dc:Bounds x="700" y="140" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Shapes for Restaurant Process -->
+      <bpmndi:BPMNShape id="order_received_di" bpmnElement="order_received">
+        <dc:Bounds x="140" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="prepare_food_di" bpmnElement="prepare_food">
+        <dc:Bounds x="220" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="restaurant_order_type_gateway_di" bpmnElement="restaurant_order_type_gateway">
+        <dc:Bounds x="360" y="310" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pack_order_takeaway_di" bpmnElement="pack_order_takeaway">
+        <dc:Bounds x="450" y="290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="takeaway_end_di" bpmnElement="takeaway_end">
+        <dc:Bounds x="580" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Shapes for Delivery Service Process -->
+      <bpmndi:BPMNShape id="delivery_order_received_di" bpmnElement="delivery_order_received">
+        <dc:Bounds x="140" y="460" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="deliver_order_di" bpmnElement="deliver_order">
+        <dc:Bounds x="220" y="450" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="delivery_success_gateway_di" bpmnElement="delivery_success_gateway">
+        <dc:Bounds x="360" y="470" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="delivery_successful_di" bpmnElement="delivery_successful">
+        <dc:Bounds x="480" y="460" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="notify_customer_issue_di" bpmnElement="notify_customer_issue">
+        <dc:Bounds x="450" y="540" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="delivery_failed_di" bpmnElement="delivery_failed">
+        <dc:Bounds x="600" y="550" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <!-- Edges for Sequence Flows -->
+      <bpmndi:BPMNEdge id="flow_enter_order_details_di" bpmnElement="flow_enter_order_details">
+        <di:waypoint x="176" y="158" />
+        <di:waypoint x="220" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="flow_order_type_di" bpmnElement="flow_order_type">
+        <di:waypoint x="320" y="170" />
+        <di:waypoint x="360" y="170" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

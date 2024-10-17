@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<semantic:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:semantic="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_1" targetNamespace="http://example.com/bpmn">
+
+  <!-- Messages -->
+  <semantic:message id="Msg_AppointmentRequest"/>
+  <semantic:message id="Msg_AppointmentConfirmation"/>
+  <semantic:message id="Msg_Payment"/>
+  <semantic:message id="Msg_Receipt"/>
+
+  <!-- Process Definition -->
+  <semantic:process id="DoctorAppointmentProcess" isExecutable="false">
+
+    <!-- Lane Sets -->
+    <semantic:laneSet id="LaneSet_Main">
+      <!-- Customer Lane -->
+      <semantic:lane id="Lane_Customer" name="Customer">
+        <semantic:flowNodeRef>StartEvent_PatientDecides</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_SearchDoctor</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_SelectDateTime</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_ProvideInfo</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Event_SendRequest</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Event_ReceiveConfirmation</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_MakePayment</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Event_ReceiveReceipt</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_CheckInAtClinic</semantic:flowNodeRef>
+        <semantic:flowNodeRef>Task_ConsultDoctor</semantic:flowNodeRef>
+        <semantic:flowNodeRef>EndEvent_VisitCompleted</semantic:flowNodeRef>
+      </semantic:lane>
+
+      <!-- Clinic Lane -->
+      <semantic:lane id="Lane_Clinic" name="Clinic">
+        <!-- Clinic Sub-Lanes -->
+        <semantic:laneSet id="LaneSet_ClinicSubLanes">
+          <!-- Reception Sub-Lane -->
+          <semantic:lane id="Lane_Reception" name="Reception">
+            <semantic:flowNodeRef>StartEvent_ReceiveRequest</semantic:flowNodeRef>
+            <semantic:flowNodeRef>Task_ScheduleAppointment</semantic:flowNodeRef>
+            <semantic:flowNodeRef>Event_SendConfirmation</semantic:flowNodeRef>
+            <semantic:flowNodeRef>Task_CheckInPatient</semantic:flowNodeRef>
+          </semantic:lane>
+          <!-- Administration Sub-Lane -->
+          <semantic:lane id="Lane_Administration" name="Administration">
+            <semantic:flowNodeRef>Event_ReceivePayment</semantic:flowNodeRef>
+            <semantic:flowNodeRef>Event_SendReceipt</semantic:flowNodeRef>
+          </semantic:lane>
+          <!-- Doctor/Nurse Sub-Lane -->
+          <semantic:lane id="Lane_DoctorNurse" name="Doctor/Nurse">
+            <semantic:flowNodeRef>Task_PrepareForConsultation</semantic:flowNodeRef>
+            <semantic:flowNodeRef>Task_ConductConsultation</semantic:flowNodeRef>
+            <semantic:flowNodeRef>EndEvent_ConsultationCompleted</semantic:flowNodeRef>
+          </semantic:lane>
+        </semantic:laneSet>
+      </semantic:lane>
+    </semantic:laneSet>
+
+    <!-- Customer Lane Elements -->
+    <semantic:startEvent id="StartEvent_PatientDecides" name="Patient decides to book an appointment">
+      <semantic:outgoing>Flow_1</semantic:outgoing>
+    </semantic:startEvent>
+
+    <semantic:task id="Task_SearchDoctor" name="Search for a suitable doctor">
+      <semantic:incoming>Flow_1</semantic:incoming>
+      <semantic:outgoing>Flow_2</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:task id="Task_SelectDateTime" name="Select preferred date and time">
+      <semantic:incoming>Flow_2</semantic:incoming>
+      <semantic:outgoing>Flow_3</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:task id="Task_ProvideInfo" name="Provide personal and insurance information">
+      <semantic:incoming>Flow_3</semantic:incoming>
+      <semantic:outgoing>Flow_4</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:intermediateThrowEvent id="Event_SendRequest" name="Send appointment request">
+      <semantic:incoming>Flow_4</semantic:incoming>
+      <semantic:outgoing>Flow_5</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_AppointmentRequest"/>
+    </semantic:intermediateThrowEvent>
+
+    <semantic:intermediateCatchEvent id="Event_ReceiveConfirmation" name="Receive appointment confirmation">
+      <semantic:incoming>Flow_5</semantic:incoming>
+      <semantic:outgoing>Flow_6</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_AppointmentConfirmation"/>
+    </semantic:intermediateCatchEvent>
+
+    <semantic:task id="Task_MakePayment" name="Make payment">
+      <semantic:incoming>Flow_6</semantic:incoming>
+      <semantic:outgoing>Flow_7</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:intermediateCatchEvent id="Event_ReceiveReceipt" name="Receive receipt">
+      <semantic:incoming>Flow_7</semantic:incoming>
+      <semantic:outgoing>Flow_8</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_Receipt"/>
+    </semantic:intermediateCatchEvent>
+
+    <semantic:task id="Task_CheckInAtClinic" name="Check-in at clinic">
+      <semantic:incoming>Flow_8</semantic:incoming>
+      <semantic:outgoing>Flow_9</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:task id="Task_ConsultDoctor" name="Consult with doctor">
+      <semantic:incoming>Flow_9</semantic:incoming>
+      <semantic:outgoing>Flow_10</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:endEvent id="EndEvent_VisitCompleted" name="Visit completed">
+      <semantic:incoming>Flow_10</semantic:incoming>
+    </semantic:endEvent>
+
+    <!-- Clinic Lane Elements -->
+    <!-- Reception Sub-Lane -->
+    <semantic:startEvent id="StartEvent_ReceiveRequest" name="Receive appointment request">
+      <semantic:incoming>MessageFlow_RequestToClinic</semantic:incoming>
+      <semantic:outgoing>Flow_11</semantic:outgoing>
+    </semantic:startEvent>
+
+    <semantic:task id="Task_ScheduleAppointment" name="Schedule appointment">
+      <semantic:incoming>Flow_11</semantic:incoming>
+      <semantic:outgoing>Flow_12</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:intermediateThrowEvent id="Event_SendConfirmation" name="Send appointment confirmation">
+      <semantic:incoming>Flow_12</semantic:incoming>
+      <semantic:outgoing>Flow_13</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_AppointmentConfirmation"/>
+    </semantic:intermediateThrowEvent>
+
+    <semantic:task id="Task_CheckInPatient" name="Check-in patient">
+      <semantic:incoming>MessageFlow_PatientCheckIn</semantic:incoming>
+      <semantic:outgoing>Flow_14</semantic:outgoing>
+    </semantic:task>
+
+    <!-- Administration Sub-Lane -->
+    <semantic:intermediateCatchEvent id="Event_ReceivePayment" name="Receive payment">
+      <semantic:incoming>MessageFlow_PaymentToClinic</semantic:incoming>
+      <semantic:outgoing>Flow_15</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_Payment"/>
+    </semantic:intermediateCatchEvent>
+
+    <semantic:intermediateThrowEvent id="Event_SendReceipt" name="Send receipt">
+      <semantic:incoming>Flow_15</semantic:incoming>
+      <semantic:outgoing>MessageFlow_ReceiptToCustomer</semantic:outgoing>
+      <semantic:messageEventDefinition messageRef="Msg_Receipt"/>
+    </semantic:intermediateThrowEvent>
+
+    <!-- Doctor/Nurse Sub-Lane -->
+    <semantic:task id="Task_PrepareForConsultation" name="Prepare for consultation">
+      <semantic:incoming>Flow_14</semantic:incoming>
+      <semantic:outgoing>Flow_16</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:task id="Task_ConductConsultation" name="Conduct consultation">
+      <semantic:incoming>Flow_16</semantic:incoming>
+      <semantic:outgoing>Flow_17</semantic:outgoing>
+    </semantic:task>
+
+    <semantic:endEvent id="EndEvent_ConsultationCompleted" name="Consultation completed">
+      <semantic:incoming>Flow_17</semantic:incoming>
+    </semantic:endEvent>
+
+    <!-- Sequence Flows -->
+    <!-- Customer Lane Flows -->
+    <semantic:sequenceFlow id="Flow_1" sourceRef="StartEvent_PatientDecides" targetRef="Task_SearchDoctor"/>
+    <semantic:sequenceFlow id="Flow_2" sourceRef="Task_SearchDoctor" targetRef="Task_SelectDateTime"/>
+    <semantic:sequenceFlow id="Flow_3" sourceRef="Task_SelectDateTime" targetRef="Task_ProvideInfo"/>
+    <semantic:sequenceFlow id="Flow_4" sourceRef="Task_ProvideInfo" targetRef="Event_SendRequest"/>
+    <semantic:sequenceFlow id="Flow_5" sourceRef="Event_SendRequest" targetRef="Event_ReceiveConfirmation"/>
+    <semantic:sequenceFlow id="Flow_6" sourceRef="Event_ReceiveConfirmation" targetRef="Task_MakePayment"/>
+    <semantic:sequenceFlow id="Flow_7" sourceRef="Task_MakePayment" targetRef="Event_ReceiveReceipt"/>
+    <semantic:sequenceFlow id="Flow_8" sourceRef="Event_ReceiveReceipt" targetRef="Task_CheckInAtClinic"/>
+    <semantic:sequenceFlow id="Flow_9" sourceRef="Task_CheckInAtClinic" targetRef="Task_ConsultDoctor"/>
+    <semantic:sequenceFlow id="Flow_10" sourceRef="Task_ConsultDoctor" targetRef="EndEvent_VisitCompleted"/>
+
+    <!-- Clinic Lane Flows -->
+    <!-- Reception Flows -->
+    <semantic:sequenceFlow id="Flow_11" sourceRef="StartEvent_ReceiveRequest" targetRef="Task_ScheduleAppointment"/>
+    <semantic:sequenceFlow id="Flow_12" sourceRef="Task_ScheduleAppointment" targetRef="Event_SendConfirmation"/>
+    <semantic:sequenceFlow id="Flow_13" sourceRef="Event_SendConfirmation" targetRef="Event_ReceivePayment"/>
+
+    <!-- Administration Flows -->
+    <semantic:sequenceFlow id="Flow_15" sourceRef="Event_ReceivePayment" targetRef="Event_SendReceipt"/>
+
+    <!-- Doctor/Nurse Flows -->
+    <semantic:sequenceFlow id="Flow_14" sourceRef="Task_CheckInPatient" targetRef="Task_PrepareForConsultation"/>
+    <semantic:sequenceFlow id="Flow_16" sourceRef="Task_PrepareForConsultation" targetRef="Task_ConductConsultation"/>
+    <semantic:sequenceFlow id="Flow_17" sourceRef="Task_ConductConsultation" targetRef="EndEvent_ConsultationCompleted"/>
+
+    <!-- Message Flows -->
+    <semantic:messageFlow id="MessageFlow_RequestToClinic" name="Appointment Request" sourceRef="Event_SendRequest" targetRef="StartEvent_ReceiveRequest"/>
+    <semantic:messageFlow id="MessageFlow_ConfirmationToCustomer" name="Appointment Confirmation" sourceRef="Event_SendConfirmation" targetRef="Event_ReceiveConfirmation"/>
+    <semantic:messageFlow id="MessageFlow_PaymentToClinic" name="Payment" sourceRef="Task_MakePayment" targetRef="Event_ReceivePayment"/>
+    <semantic:messageFlow id="MessageFlow_ReceiptToCustomer" name="Receipt" sourceRef="Event_SendReceipt" targetRef="Event_ReceiveReceipt"/>
+    <semantic:messageFlow id="MessageFlow_PatientCheckIn" name="Patient Check-In" sourceRef="Task_CheckInAtClinic" targetRef="Task_CheckInPatient"/>
+
+  </semantic:process>
+
+  <!-- Collaboration -->
+  <semantic:collaboration id="Collaboration_DoctorAppointment">
+    <semantic:participant id="Participant_Customer" name="Customer" processRef="DoctorAppointmentProcess"/>
+    <semantic:participant id="Participant_Clinic" name="Clinic" processRef="DoctorAppointmentProcess"/>
+    <!-- Include message flows here -->
+    <semantic:messageFlow id="MF_Request" name="Appointment Request" sourceRef="Event_SendRequest" targetRef="StartEvent_ReceiveRequest"/>
+    <semantic:messageFlow id="MF_Confirmation" name="Appointment Confirmation" sourceRef="Event_SendConfirmation" targetRef="Event_ReceiveConfirmation"/>
+    <semantic:messageFlow id="MF_Payment" name="Payment" sourceRef="Task_MakePayment" targetRef="Event_ReceivePayment"/>
+    <semantic:messageFlow id="MF_Receipt" name="Receipt" sourceRef="Event_SendReceipt" targetRef="Event_ReceiveReceipt"/>
+    <semantic:messageFlow id="MF_CheckIn" name="Patient Check-In" sourceRef="Task_CheckInAtClinic" targetRef="Task_CheckInPatient"/>
+  </semantic:collaboration>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_DoctorAppointmentProcess">
+    <bpmndi:BPMNPlane id="BPMNPlane_DoctorAppointmentProcess" bpmnElement="DoctorAppointmentProcess">
+
+      <!-- Customer Participant Shape -->
+      <bpmndi:BPMNShape id="Shape_Lane_Customer" bpmnElement="Lane_Customer">
+        <dc:Bounds x="10" y="10" width="1500" height="200"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Clinic Participant Shape -->
+      <bpmndi:BPMNShape id="Shape_Lane_Clinic" bpmnElement="Lane_Clinic">
+        <dc:Bounds x="10" y="220" width="1500" height="500"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Clinic Sub-Lanes -->
+      <!-- Reception Sub-Lane -->
+      <bpmndi:BPMNShape id="Shape_Lane_Reception" bpmnElement="Lane_Reception">
+        <dc:Bounds x="40" y="220" width="1470" height="160"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Administration Sub-Lane -->
+      <bpmndi:BPMNShape id="Shape_Lane_Administration" bpmnElement="Lane_Administration">
+        <dc:Bounds x="40" y="380" width="1470" height="160"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Doctor/Nurse Sub-Lane -->
+      <bpmndi:BPMNShape id="Shape_Lane_DoctorNurse" bpmnElement="Lane_DoctorNurse">
+        <dc:Bounds x="40" y="540" width="1470" height="180"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Customer Lane Nodes -->
+      <!-- Start Event: Patient decides to book an appointment -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_PatientDecides" bpmnElement="StartEvent_PatientDecides">
+        <dc:Bounds x="100" y="90" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Search for a suitable doctor -->
+      <bpmndi:BPMNShape id="Shape_Task_SearchDoctor" bpmnElement="Task_SearchDoctor">
+        <dc:Bounds x="200" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Select preferred date and time -->
+      <bpmndi:BPMNShape id="Shape_Task_SelectDateTime" bpmnElement="Task_SelectDateTime">
+        <dc:Bounds x="360" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Provide personal and insurance information -->
+      <bpmndi:BPMNShape id="Shape_Task_ProvideInfo" bpmnElement="Task_ProvideInfo">
+        <dc:Bounds x="520" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Intermediate Throw Event: Send appointment request -->
+      <bpmndi:BPMNShape id="Shape_Event_SendRequest" bpmnElement="Event_SendRequest">
+        <dc:Bounds x="680" y="90" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Intermediate Catch Event: Receive appointment confirmation -->
+      <bpmndi:BPMNShape id="Shape_Event_ReceiveConfirmation" bpmnElement="Event_ReceiveConfirmation">
+        <dc:Bounds x="820" y="90" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Make payment -->
+      <bpmndi:BPMNShape id="Shape_Task_MakePayment" bpmnElement="Task_MakePayment">
+        <dc:Bounds x="920" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Intermediate Catch Event: Receive receipt -->
+      <bpmndi:BPMNShape id="Shape_Event_ReceiveReceipt" bpmnElement="Event_ReceiveReceipt">
+        <dc:Bounds x="1080" y="90" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Check-in at clinic -->
+      <bpmndi:BPMNShape id="Shape_Task_CheckInAtClinic" bpmnElement="Task_CheckInAtClinic">
+        <dc:Bounds x="1180" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Consult with doctor -->
+      <bpmndi:BPMNShape id="Shape_Task_ConsultDoctor" bpmnElement="Task_ConsultDoctor">
+        <dc:Bounds x="1340" y="75" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- End Event: Visit completed -->
+      <bpmndi:BPMNShape id="Shape_EndEvent_VisitCompleted" bpmnElement="EndEvent_VisitCompleted">
+        <dc:Bounds x="1480" y="90" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Clinic Lane Nodes -->
+      <!-- Reception Sub-Lane Nodes -->
+      <!-- Start Event: Receive appointment request -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_ReceiveRequest" bpmnElement="StartEvent_ReceiveRequest">
+        <dc:Bounds x="680" y="290" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Schedule appointment -->
+      <bpmndi:BPMNShape id="Shape_Task_ScheduleAppointment" bpmnElement="Task_ScheduleAppointment">
+        <dc:Bounds x="760" y="275" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Intermediate Throw Event: Send appointment confirmation -->
+      <bpmndi:BPMNShape id="Shape_Event_SendConfirmation" bpmnElement="Event_SendConfirmation">
+        <dc:Bounds x="900" y="290" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Check-in patient -->
+      <bpmndi:BPMNShape id="Shape_Task_CheckInPatient" bpmnElement="Task_CheckInPatient">
+        <dc:Bounds x="1180" y="275" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Administration Sub-Lane Nodes -->
+      <!-- Intermediate Catch Event: Receive payment -->
+      <bpmndi:BPMNShape id="Shape_Event_ReceivePayment" bpmnElement="Event_ReceivePayment">
+        <dc:Bounds x="940" y="435" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Intermediate Throw Event: Send receipt -->
+      <bpmndi:BPMNShape id="Shape_Event_SendReceipt" bpmnElement="Event_SendReceipt">
+        <dc:Bounds x="1080" y="435" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Doctor/Nurse Sub-Lane Nodes -->
+      <!-- Task: Prepare for consultation -->
+      <bpmndi:BPMNShape id="Shape_Task_PrepareForConsultation" bpmnElement="Task_PrepareForConsultation">
+        <dc:Bounds x="1260" y="595" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Task: Conduct consultation -->
+      <bpmndi:BPMNShape id="Shape_Task_ConductConsultation" bpmnElement="Task_ConductConsultation">
+        <dc:Bounds x="1420" y="595" width="120" height="60"/>
+      </bpmndi:BPMNShape>
+
+      <!-- End Event: Consultation completed -->
+      <bpmndi:BPMNShape id="Shape_EndEvent_ConsultationCompleted" bpmnElement="EndEvent_ConsultationCompleted">
+        <dc:Bounds x="1560" y="610" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Sequence Flows -->
+      <!-- Customer Lane Flows -->
+      <bpmndi:BPMNEdge id="Edge_Flow_1" bpmnElement="Flow_1">
+        <di:waypoint x="136" y="108"/>
+        <di:waypoint x="200" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_2" bpmnElement="Flow_2">
+        <di:waypoint x="320" y="105"/>
+        <di:waypoint x="360" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_3" bpmnElement="Flow_3">
+        <di:waypoint x="480" y="105"/>
+        <di:waypoint x="520" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_4" bpmnElement="Flow_4">
+        <di:waypoint x="640" y="105"/>
+        <di:waypoint x="680" y="108"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_5" bpmnElement="Flow_5">
+        <di:waypoint x="716" y="108"/>
+        <di:waypoint x="820" y="108"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_6" bpmnElement="Flow_6">
+        <di:waypoint x="856" y="108"/>
+        <di:waypoint x="920" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_7" bpmnElement="Flow_7">
+        <di:waypoint x="1040" y="105"/>
+        <di:waypoint x="1080" y="108"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_8" bpmnElement="Flow_8">
+        <di:waypoint x="1116" y="108"/>
+        <di:waypoint x="1180" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_9" bpmnElement="Flow_9">
+        <di:waypoint x="1300" y="105"/>
+        <di:waypoint x="1340" y="105"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_10" bpmnElement="Flow_10">
+        <di:waypoint x="1460" y="105"/>
+        <di:waypoint x="1480" y="108"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Clinic Lane Flows -->
+      <!-- Reception Sub-Lane Flows -->
+      <bpmndi:BPMNEdge id="Edge_Flow_11" bpmnElement="Flow_11">
+        <di:waypoint x="716" y="308"/>
+        <di:waypoint x="760" y="305"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_12" bpmnElement="Flow_12">
+        <di:waypoint x="880" y="308"/>
+        <di:waypoint x="900" y="308"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_13" bpmnElement="Flow_13">
+        <di:waypoint x="918" y="308"/>
+        <di:waypoint x="918" y="435"/>
+        <di:waypoint x="940" y="435"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Administration Sub-Lane Flows -->
+      <bpmndi:BPMNEdge id="Edge_Flow_15" bpmnElement="Flow_15">
+        <di:waypoint x="976" y="453"/>
+        <di:waypoint x="1080" y="453"/>
+      </bpmndi:BPMNEdge>
+
+      <!-- Doctor/Nurse Sub-Lane Flows -->
+      <bpmndi:BPMNEdge id="Edge_Flow_14" bpmnElement="Flow_14">
+        <di:waypoint x="1300" y="305"/>
+        <di:waypoint x="1300" y="625"/>
+        <di:waypoint x="1260" y="625"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_16" bpmnElement="Flow_16">
+        <di:waypoint x="1380" y="625"/>
+        <di:waypoint x="1420" y="625"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_17" bpmnElement="Flow_17">
+        <di:waypoint x="1540" y="625"/>
+        <di:waypoint x="1560" y="628"/>
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+
+</semantic:definitions>
